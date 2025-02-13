@@ -16,7 +16,7 @@ const {
   AssociateAddressCommand,
   DescribeAddressesCommand,
   ReleaseAddressCommand,
-  DescribeInstancesCommand,
+  DescribeInstancesCommand
 } = require('@aws-sdk/client-ec2')
 const ConfigParser = require('configparser')
 const { exec } = require('child_process')
@@ -45,8 +45,8 @@ async function newIpAws(serverConfig) {
     region: region,
     credentials: {
       accessKeyId: accessKey,
-      secretAccessKey: secretKey,
-    },
+      secretAccessKey: secretKey
+    }
   })
   async function disassociateAndRelease() {
     //list all elastic ip with tag instance=instanceId
@@ -55,9 +55,9 @@ async function newIpAws(serverConfig) {
         Filters: [
           {
             Name: 'tag:instance',
-            Values: [instanceId],
-          },
-        ],
+            Values: [instanceId]
+          }
+        ]
       })
       const response = await ec2.send(command)
       if (response.Addresses.length > 0) {
@@ -65,13 +65,13 @@ async function newIpAws(serverConfig) {
         for (let i = 0; i < response.Addresses.length; i++) {
           try {
             const command = new DisassociateAddressCommand({
-              AssociationId: response.Addresses[i].AssociationId,
+              AssociationId: response.Addresses[i].AssociationId
             })
             await ec2.send(command)
           } catch (err) {}
           try {
             const command2 = new ReleaseAddressCommand({
-              AllocationId: response.Addresses[i].AllocationId,
+              AllocationId: response.Addresses[i].AllocationId
             })
             await ec2.send(command2)
           } catch (err) {}
@@ -85,7 +85,7 @@ async function newIpAws(serverConfig) {
   async function getInstanceIp() {
     try {
       const command = new DescribeInstancesCommand({
-        InstanceIds: [instanceId],
+        InstanceIds: [instanceId]
       })
       const response = await ec2.send(command)
       return response.Reservations[0].Instances[0].PublicIpAddress
@@ -100,14 +100,14 @@ async function newIpAws(serverConfig) {
         TagSpecifications: [
           {
             ResourceType: 'elastic-ip',
-            Tags: [{ Key: 'instance', Value: instanceId }],
-          },
-        ],
+            Tags: [{ Key: 'instance', Value: instanceId }]
+          }
+        ]
       })
       const response = await ec2.send(command)
       return {
         elasticIp: response.PublicIp,
-        allocationId: response.AllocationId,
+        allocationId: response.AllocationId
       }
     } catch (err) {
       console.error(err)
@@ -119,7 +119,7 @@ async function newIpAws(serverConfig) {
     try {
       const command = new AssociateAddressCommand({
         InstanceId: instanceId,
-        PublicIp: allocateIp.elasticIp,
+        PublicIp: allocateIp.elasticIp
       })
       const response = await ec2.send(command)
       return response
@@ -132,7 +132,7 @@ async function newIpAws(serverConfig) {
   async function disassociateIp() {
     try {
       const command = new DisassociateAddressCommand({
-        PublicIp: allocateIp.elasticIp,
+        PublicIp: allocateIp.elasticIp
       })
       const response = await ec2.send(command)
       return response
@@ -144,7 +144,7 @@ async function newIpAws(serverConfig) {
   async function releaseIp() {
     try {
       const command = new ReleaseAddressCommand({
-        AllocationId: allocateIp.allocationId,
+        AllocationId: allocateIp.allocationId
       })
       const response = await ec2.send(command)
       return response
@@ -174,7 +174,7 @@ async function newIpAzure(serverConfig) {
   const credential = new DefaultAzureCredential({
     clientId: AZURE_CLIENT_ID,
     clientSecret: AZURE_CLIENT_SECRET,
-    tenantId: AZURE_TENANT_ID,
+    tenantId: AZURE_TENANT_ID
   })
 
   const networkClient = new NetworkManagementClient(
@@ -347,23 +347,23 @@ async function newIpTencent(serverConfig) {
   const clientConfig = {
     credential: {
       secretId: secretId,
-      secretKey: secretKey,
+      secretKey: secretKey
     },
     region: region,
     profile: {
       httpProfile: {
-        endpoint: 'cvm.tencentcloudapi.com',
-      },
-    },
+        endpoint: 'cvm.tencentcloudapi.com'
+      }
+    }
   }
   const client = new CvmClient(clientConfig)
   const params = {
-    InstanceIds: [instanceId],
+    InstanceIds: [instanceId]
   }
   const stopParams = {
     InstanceIds: [`${instanceId}`],
     StopType: 'HARD',
-    StoppedMode: 'STOP_CHARGING',
+    StoppedMode: 'STOP_CHARGING'
   }
   let instanceDescribed = await client.DescribeInstances(params)
   let oldIp = ''
@@ -421,12 +421,13 @@ async function parseConfig() {
   let tencentConfigList = []
   let azureConfigList = []
   let awsConfigList = []
-  let cloudflareConfig = {}
   let apiConfig = {}
   for (let i = 0; i < confList.length; i++) {
     const configName = confList[i]
     const configType = config.get(confList[i], 'type')
     if (configType == 'tencent') {
+      const user = config.get(confList[i], 'user') || null
+      const password = config.get(confList[i], 'password') || null
       const secretId = config.get(confList[i], 'secretId')
       const secretKey = config.get(confList[i], 'secretKey')
       const region = config.get(confList[i], 'region')
@@ -440,19 +441,12 @@ async function parseConfig() {
         region: region,
         instanceId: instanceId,
         socks5Port: socks5Port,
-        httpPort: httpPort,
+        httpPort: httpPort
       })
-    } else if (configType == 'cloudflare') {
-      const email = config.get(confList[i], 'email')
-      const token = config.get(confList[i], 'token')
-      const domain = config.get(confList[i], 'domain')
-      const zoneId = config.get(confList[i], 'zoneId') || ''
-      const configName = confList[i]
-      cloudflareConfig.email = email
-      cloudflareConfig.token = token
-      cloudflareConfig.domain = domain
-      cloudflareConfig.configName = configName
-      cloudflareConfig.zoneId = zoneId
+      if (user && password) {
+        tencentConfigList[tencentConfigList.length - 1].user = user
+        tencentConfigList[tencentConfigList.length - 1].password = password
+      }
     } else if (configType == 'api') {
       const prefix = config.get(confList[i], 'prefix')
       const port = config.get(confList[i], 'port')
@@ -468,6 +462,8 @@ async function parseConfig() {
       apiConfig.apiHostName = apiHostName
     } else if (configType == 'azure') {
       const socks5Port = config.get(confList[i], 'socks5Port')
+      const user = config.get(confList[i], 'user') || null
+      const password = config.get(confList[i], 'password') || null
       const httpPort = config.get(confList[i], 'httpPort')
       const clientId = config.get(confList[i], 'clientId')
       const clientSecret = config.get(confList[i], 'clientSecret')
@@ -490,8 +486,12 @@ async function parseConfig() {
         publicIpName: publicIpName,
         ipConfigName: ipConfigName,
         nicName: nicName,
-        vmName: vmName,
+        vmName: vmName
       })
+      if (user && password) {
+        azureConfigList[azureConfigList.length - 1].user = user
+        azureConfigList[azureConfigList.length - 1].password = password
+      }
     } else if (configType == 'aws') {
       const accessKey = config.get(confList[i], 'accessKey')
       const secretKey = config.get(confList[i], 'secretKey')
@@ -499,6 +499,8 @@ async function parseConfig() {
       const region = config.get(confList[i], 'region')
       const socks5Port = config.get(confList[i], 'socks5Port')
       const httpPort = config.get(confList[i], 'httpPort')
+      const user = config.get(confList[i], 'user') || null
+      const password = config.get(confList[i], 'password') || null
       awsConfigList.push({
         configName: configName,
         accessKey: accessKey,
@@ -506,49 +508,22 @@ async function parseConfig() {
         instanceId: instanceId,
         region: region,
         socks5Port: socks5Port,
-        httpPort: httpPort,
+        httpPort: httpPort
       })
+      if (user && password) {
+        awsConfigList[awsConfigList.length - 1].user = user
+        awsConfigList[awsConfigList.length - 1].password = password
+      }
     }
   }
   return {
     configs: {
       api: apiConfig,
-      cloudflare: cloudflareConfig,
       tencent: tencentConfigList,
       azure: azureConfigList,
-      aws: awsConfigList,
-    },
-  }
-}
-
-async function checkCloudflare(serverConfig) {
-  const cloudflareEmail = serverConfig.email
-  const cloudflareKey = serverConfig.token
-  const cloudflareDomain = serverConfig.domain
-  const configName = serverConfig.configName
-  let result = {}
-  result.configName = configName
-  try {
-    const cf = require('cloudflare')({
-      email: cloudflareEmail,
-      key: cloudflareKey,
-    })
-    let zoneId = serverConfig.zoneId
-    if (!zoneId) {
-      zoneId = await cf.zones.browse().then((data) => {
-        const zone = data.result.find((zone) => zone.name == cloudflareDomain)
-        return zone.id
-      })
-      if (!zoneId) {
-        return false
-      }
+      aws: awsConfigList
     }
-    result.zoneId = zoneId
-    result.success = true
-  } catch (err) {
-    result.success = false
   }
-  return result
 }
 
 async function checkTencent(serverConfig) {
@@ -561,18 +536,18 @@ async function checkTencent(serverConfig) {
   const clientConfig = {
     credential: {
       secretId: secretId,
-      secretKey: secretKey,
+      secretKey: secretKey
     },
     region: region,
     profile: {
       httpProfile: {
-        endpoint: 'cvm.tencentcloudapi.com',
-      },
-    },
+        endpoint: 'cvm.tencentcloudapi.com'
+      }
+    }
   }
   const client = new CvmClient(clientConfig)
   const params = {
-    InstanceIds: [instanceId],
+    InstanceIds: [instanceId]
   }
   let result = {}
   result.configName = serverConfig.configName
@@ -604,8 +579,8 @@ async function checkAws(serverConfig) {
     region: region,
     credentials: {
       accessKeyId: accessKey,
-      secretAccessKey: secretKey,
-    },
+      secretAccessKey: secretKey
+    }
   })
   let result = {}
   result.configName = configName
@@ -613,7 +588,7 @@ async function checkAws(serverConfig) {
     async function getInstanceIp() {
       try {
         const command = new DescribeInstancesCommand({
-          InstanceIds: [instanceId],
+          InstanceIds: [instanceId]
         })
         const response = await ec2.send(command)
         return response.Reservations[0].Instances[0].PublicIpAddress
@@ -645,7 +620,7 @@ async function checkAzure(serverConfig) {
   const credential = new DefaultAzureCredential({
     clientId: AZURE_CLIENT_ID,
     clientSecret: AZURE_CLIENT_SECRET,
-    tenantId: AZURE_TENANT_ID,
+    tenantId: AZURE_TENANT_ID
   })
   let result = {}
   result.configName = serverConfig.configName
@@ -696,7 +671,7 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
   if (configName && port) {
     return res.status(400).json({
       success: false,
-      error: 'bad request, only accept one query (configName/port)',
+      error: 'bad request, only accept one query (configName/port)'
     })
   }
 
@@ -717,7 +692,7 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
       if (!foundConfig) {
         return res.status(400).json({
           success: false,
-          error: `bad request, no config found with port ${port}`,
+          error: `bad request, no config found with port ${port}`
         })
       }
 
@@ -733,13 +708,9 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
     const apiConfig = configs.api
     const appPort = apiConfig.port
     const apiHostName = apiConfig.apiHostName
-    const cloudflareConfig = configs.cloudflare
-    const domain = cloudflareConfig.domain
-    const email = cloudflareConfig.email
-    const token = cloudflareConfig.token
     const hostLocalIp = apiConfig.hostLocalIp
     const hostPublicIp = apiConfig.hostPublicIp
-    const host = `${configName}.${domain}`
+    const host = `${configName}.iprotate`
     const configType = config.get(configName, 'type')
     if (!configType) {
       return res.status(400).json({ success: false, error: 'config not found' })
@@ -793,6 +764,8 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
     }
     const socks5Port = serverConfig.socks5Port
     const httpPort = serverConfig.httpPort
+    const user = serverConfig.user || null
+    const password = serverConfig.password || null
     const publicIp = result.newIp
     //check if host exist on /etc/hosts, if yes delete the line cotaint host
     const hosts = fs.readFileSync('/etc/hosts', 'utf8')
@@ -805,68 +778,12 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
     }
     //add host to /etc/hosts
     fs.appendFileSync('/etc/hosts', `${publicIp} ${host}\n`)
-    //update cloudflare dns record
     console.log(
       `profile: ${configName}, old ip: ${result.oldIp}, new ip: ${result.newIp}`
     )
-    const cf = require('cloudflare')({
-      email: email,
-      key: token,
-    })
-    let zoneId = cloudflareConfig.zoneId
-    if (!zoneId) {
-      zoneId = await cf.zones.browse().then((data) => {
-        const zone = data.result.find((zone) => zone.name == domain)
-        return zone.id || cloudflareConfig.zoneId
-      })
-    }
-    //check if dns record for host exist, if not create one, if yes update it
-    const dnsRecord = await cf.dnsRecords.browse(zoneId).then((data) => {
-      const record = data.result.find((record) => record.name == host)
-      return record
-    })
-    if (dnsRecord == undefined) {
-      await cf.dnsRecords.add(zoneId, {
-        type: 'A',
-        name: host,
-        content: publicIp,
-        ttl: 1,
-        proxied: false,
-      })
-    } else {
-      await cf.dnsRecords.edit(zoneId, dnsRecord.id, {
-        type: 'A',
-        name: host,
-        content: publicIp,
-        ttl: 1,
-        proxied: false,
-      })
-    }
-    const apiHostNameRecord = await cf.dnsRecords
-      .browse(zoneId)
-      .then((data) => {
-        const record = data.result.find((record) => record.name == apiHostName)
-        return record
-      })
-    if (apiHostNameRecord == undefined) {
-      await cf.dnsRecords.add(zoneId, {
-        type: 'A',
-        name: apiHostName,
-        content: hostPublicIp,
-        ttl: 1,
-        proxied: false,
-      })
-    } else if (apiHostNameRecord.content != hostPublicIp) {
-      await cf.dnsRecords.edit(zoneId, apiHostNameRecord.id, {
-        type: 'A',
-        name: apiHostName,
-        content: hostPublicIp,
-        ttl: 1,
-        proxied: false,
-      })
-    }
 
     const configPath = `/etc/shadowsocks/config_${configName}.json`
+    const authPath = `/etc/shadowsocks/auth_${configName}.json`
     const configTemplate = fs.readFileSync('configtemplate.json', 'utf8')
     const configTemplateJson = JSON.parse(configTemplate)
     configTemplateJson.server = host
@@ -874,10 +791,25 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
     configTemplateJson.password = 'Pass'
     configTemplateJson.method = 'aes-128-gcm'
     configTemplateJson.mode = 'tcp_and_udp'
-    configTemplateJson.local_address = hostLocalIp
-    configTemplateJson.local_port = parseInt(socks5Port)
+    if (user && password) {
+      configTemplateJson.locals[1].socks5_auth_config_path = authPath
+      const authTemplate = {
+        password: {
+          users: [
+            {
+              user_name: user,
+              password: password
+            }
+          ]
+        }
+      }
+      fs.writeFileSync(authPath, JSON.stringify(authTemplate))
+    }
+
     configTemplateJson.locals[0].local_address = hostLocalIp
     configTemplateJson.locals[0].local_port = parseInt(httpPort)
+    configTemplateJson.locals[1].local_address = hostLocalIp
+    configTemplateJson.locals[1].local_port = parseInt(socks5Port)
     //check if directory /etc/shadowsocks/ exist, if not create one
     if (!fs.existsSync('/etc/shadowsocks')) {
       fs.mkdirSync('/etc/shadowsocks')
@@ -914,15 +846,18 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
     for (retry = 0; retry < maxRetry; retry++) {
       try {
         //check socks5://localhost:socks5Port to fake.chiacloud.farm/ip using axios, if response.data == publicIp, break
-        const socks5Url = `socks5://${hostPublicIp}:${socks5Port}`
+        let socks5Url = `socks5://${hostPublicIp}:${socks5Port}`
+        if (user && password) {
+          socks5Url = `socks5://${user}:${password}@${hostPublicIp}:${socks5Port}`
+        }
         const agent = new SocksProxyAgent(socks5Url)
         console.log(`try to connect using ${socks5Url}`)
         const response = await axios.request({
-          url: `http://${hostPublicIp}:${appPort}/${prefix}/ip`,
+          url: `http://ifconfig.me`,
           method: 'GET',
           httpsAgent: agent,
           httpAgent: agent,
-          timeout: 1000,
+          timeout: 1000
         })
         if (response.data == publicIp) {
           break
@@ -947,7 +882,7 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
     result.proxy = {
       socks5: `${apiHostName}:${socks5Port}`,
       http: `${apiHostName}:${httpPort}`,
-      shadowsocks: `${host}:8388`,
+      shadowsocks: `${host}:8388`
     }
     result.configName = configName
     const endTime = performance.now()
@@ -958,9 +893,9 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
         configName: configName,
         oldIp: result.oldIp,
         newIp: result.newIp,
-        proxy: result.proxy,
+        proxy: result.proxy
       },
-      executionTime: `${executionTime} seconds`,
+      executionTime: `${executionTime} seconds`
     })
   } catch (err) {
     console.error(err)
@@ -979,7 +914,7 @@ app.get(`/${prefix}/newip/`, async (req, res) => {
       success: false,
       configName: configName,
       error: err.message,
-      executionTime: `${executionTime} seconds`,
+      executionTime: `${executionTime} seconds`
     })
   }
 })
@@ -997,16 +932,13 @@ app.get(`/${prefix}/checkConfig`, async (req, res) => {
   console.log('hit checkConfig')
   const { configs } = await parseConfig()
   const tencentConfigList = configs.tencent
-  const cloudflareConfig = configs.cloudflare
   const awsConfigList = configs.aws
   const azureConfigList = configs.azure
-  let cloudflareCheckResult = {}
   let tencentCheckResult = []
   let awsCheckResult = []
   let azureCheckResult = []
 
   try {
-    cloudflareCheckResult = await checkCloudflare(cloudflareConfig)
     tencentCheckResult = await Promise.all(
       tencentConfigList.map((config) => checkTencent(config))
     )
@@ -1022,10 +954,9 @@ app.get(`/${prefix}/checkConfig`, async (req, res) => {
   return res.status(200).json({
     success: true,
     result: {
-      cloudflare: cloudflareCheckResult,
       tencent: tencentCheckResult,
       aws: awsCheckResult,
-      azure: azureCheckResult,
-    },
+      azure: azureCheckResult
+    }
   })
 })
