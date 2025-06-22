@@ -25,4 +25,5 @@ git clone https://github.com/ilyasbit/cloud-iprotate.git
 mv cloud-iprotate /opt/
 cd /opt/cloud-iprotate/
 npm install
+npm install pm2 -g
 cd ~
