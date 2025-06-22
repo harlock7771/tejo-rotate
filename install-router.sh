@@ -26,4 +26,6 @@ mv cloud-iprotate /opt/
 cd /opt/cloud-iprotate/
 npm install
 npm install pm2 -g
+sudo apt install python3 python3-pip -y
+pip3 install boto3
 cd ~
