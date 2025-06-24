@@ -41,18 +41,14 @@ sudo mkdir -p /opt/cloud-iprotate/ || { echo "Gagal membuat direktori /opt/cloud
 sudo chown -R $(logname):$(logname) /opt/cloud-iprotate/ # Ubah kepemilikan ke user yang menjalankan sudo
 chmod -R 755 /opt/cloud-iprotate/ # Beri izin yang sesuai
 
-echo "Mengunduh aplikasi router Node.js (index.js, configtemplate.json, dan package.json)..." # <--- Pesan diubah
-# Mengunduh index.js
+echo "Mengunduh aplikasi router Node.js (index.js, configtemplate.json, dan package.json)..."
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/index.js -o /opt/cloud-iprotate/index.js || { echo "Gagal mengunduh index.js. Keluar."; exit 1; }
-# Mengunduh configtemplate.json
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/configtemplate.json -o /opt/cloud-iprotate/configtemplate.json || { echo "Gagal mengunduh configtemplate.json. Keluar."; exit 1; }
-# --- BARU: Mengunduh package.json ---
-sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/package.json -o /opt/cloud-iprotate/package.json || { echo "Gagal mengunduh package.json. Keluar."; exit 1; } # <--- BARIS INI DITAMBAHKAN
+sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/package.json -o /opt/cloud-iprotate/package.json || { echo "Gagal mengunduh package.json. Keluar."; exit 1; }
 
 
 # --- BARIS-BARIS UNTUK SKRIP PYTHON DAN FILE AWS_ACCOUNTS.JSON ---
 echo "Mengunduh skrip Python (`main.py`, `health_monitor.py`, `redeploy.py`) dan file `aws_accounts.json`..."
-# Catatan: URL ini mengasumsikan Anda sudah mengunggah file-file ini ke repositori Anda
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/main.py -o /opt/cloud-iprotate/main.py || { echo "Gagal mengunduh main.py. Keluar."; exit 1; }
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/health_monitor.py -o /opt/cloud-iprotate/health_monitor.py || { echo "Gagal mengunduh health_monitor.py. Keluar."; exit 1; }
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/redeploy.py -o /opt/cloud-iprotate/redeploy.py || { echo "Gagal mengunduh redeploy.py. Keluar."; exit 1; }
@@ -73,7 +69,8 @@ echo "Menginstal dependensi Node.js untuk aplikasi router..."
 (cd /opt/cloud-iprotate/ && npm install) || { echo "Gagal menjalankan npm install. Keluar."; exit 1; }
 
 echo "Menyiapkan PM2 untuk aplikasi router (index.js)..."
-pm2 start /opt/cloud-iprotate/index.js --name iprotate || { echo "Gagal memulai aplikasi dengan PM2. Keluar."; exit 1; }
+# Menggunakan --cwd untuk secara eksplisit menentukan direktori kerja PM2
+pm2 start /opt/cloud-iprotate/index.js --name iprotate --cwd /opt/cloud-iprotate/ || { echo "Gagal memulai aplikasi dengan PM2. Keluar."; exit 1; }
 pm2 save || { echo "Gagal menyimpan konfigurasi PM2. Keluar."; exit 1; }
 pm2 startup systemd || { echo "Gagal mengaktifkan PM2 startup. Keluar."; exit 1; }
 
