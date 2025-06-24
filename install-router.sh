@@ -22,27 +22,35 @@ else
     echo "Node.js version 18.x.x already installed"
 fi
 
-# Mengatasi bagian instalasi yang mungkin berkonflik atau tidak relevan
-# Menghapus instalasi ss-easy-setup yang mungkin tidak diperlukan untuk cloud-iprotate
-# Menghapus git clone ilyasbit/cloud-iprotate yang lama dan diganti dengan curl langsung
 echo "Membersihkan instalasi lama dan menyiapkan direktori /opt/cloud-iprotate/..."
+# PERHATIAN PENTING: Perintah ini akan MENGHAPUS SELURUH ISI direktori /opt/cloud-iprotate/
+# Jika Anda meng-upgrade instalasi yang sudah ada dan memiliki config.conf atau aws_accounts.json
+# yang sudah terisi data penting, data tersebut AKAN HILANG.
+# Pastikan Anda sudah mem-backupnya jika diperlukan, atau hanya jalankan skrip ini
+# pada instalasi VPS yang benar-benar baru.
 if [[ -d "/opt/cloud-iprotate/" ]]; then
+    echo "Direktori /opt/cloud-iprotate/ ditemukan, menghapus untuk instalasi bersih..."
     rm -rf /opt/cloud-iprotate/
+else
+    echo "Direktori /opt/cloud-iprotate/ tidak ditemukan, melanjutkan pembuatan..."
 fi
+
 
 # Buat direktori utama untuk aplikasi
 sudo mkdir -p /opt/cloud-iprotate/ || { echo "Gagal membuat direktori /opt/cloud-iprotate/. Keluar."; exit 1; }
 sudo chown -R $(logname):$(logname) /opt/cloud-iprotate/ # Ubah kepemilikan ke user yang menjalankan sudo
 chmod -R 755 /opt/cloud-iprotate/ # Beri izin yang sesuai
 
-echo "Mengunduh aplikasi router Node.js (index.js dan configtemplate.json)..."
+echo "Mengunduh aplikasi router Node.js (index.js, configtemplate.json, dan package.json)..." # <--- Pesan diubah
 # Mengunduh index.js
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/index.js -o /opt/cloud-iprotate/index.js || { echo "Gagal mengunduh index.js. Keluar."; exit 1; }
-# Mengunduh configtemplate.json (jika Anda ingin mengaturnya dari github juga)
+# Mengunduh configtemplate.json
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/configtemplate.json -o /opt/cloud-iprotate/configtemplate.json || { echo "Gagal mengunduh configtemplate.json. Keluar."; exit 1; }
+# --- BARU: Mengunduh package.json ---
+sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/package.json -o /opt/cloud-iprotate/package.json || { echo "Gagal mengunduh package.json. Keluar."; exit 1; } # <--- BARIS INI DITAMBAHKAN
 
 
-# --- BARIS-BARIS BARU YANG DITAMBAHKAN UNTUK SKRIP PYTHON DAN FILE AWS_ACCOUNTS.JSON ---
+# --- BARIS-BARIS UNTUK SKRIP PYTHON DAN FILE AWS_ACCOUNTS.JSON ---
 echo "Mengunduh skrip Python (`main.py`, `health_monitor.py`, `redeploy.py`) dan file `aws_accounts.json`..."
 # Catatan: URL ini mengasumsikan Anda sudah mengunggah file-file ini ke repositori Anda
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/main.py -o /opt/cloud-iprotate/main.py || { echo "Gagal mengunduh main.py. Keluar."; exit 1; }
@@ -63,7 +71,6 @@ sudo chmod +x /opt/cloud-iprotate/redeploy.py
 echo "Menginstal dependensi Node.js untuk aplikasi router..."
 # Pastikan npm install dijalankan di direktori yang benar
 (cd /opt/cloud-iprotate/ && npm install) || { echo "Gagal menjalankan npm install. Keluar."; exit 1; }
-npm install pm2 -g # Pastikan pm2 terinstal global
 
 echo "Menyiapkan PM2 untuk aplikasi router (index.js)..."
 pm2 start /opt/cloud-iprotate/index.js --name iprotate || { echo "Gagal memulai aplikasi dengan PM2. Keluar."; exit 1; }
