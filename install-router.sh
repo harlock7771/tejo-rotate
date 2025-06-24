@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# --- BARU: Pindah ke direktori aman sebelum operasi destruktif ---
-# Ini mencegah error 'getcwd' jika direktori eksekusi skrip dihapus.
-cd /tmp || { echo "Gagal pindah ke /tmp. Keluar."; exit 1; }
-# --- AKHIR BARU ---
-
 # Pastikan skrip dijalankan sebagai root atau dengan sudo
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root or with sudo"
@@ -27,33 +22,29 @@ else
     echo "Node.js version 18.x.x already installed"
 fi
 
+# Mengatasi bagian instalasi yang mungkin berkonflik atau tidak relevan
+# Menghapus instalasi ss-easy-setup yang mungkin tidak diperlukan untuk cloud-iprotate
+# Menghapus git clone ilyasbit/cloud-iprotate yang lama dan diganti dengan curl langsung
 echo "Membersihkan instalasi lama dan menyiapkan direktori /opt/cloud-iprotate/..."
-# PERHATIAN PENTING: Perintah ini akan MENGHAPUS SELURUH ISI direktori /opt/cloud-iprotate/
-# Jika Anda meng-upgrade instalasi yang sudah ada dan memiliki config.conf atau aws_accounts.json
-# yang sudah terisi data penting, data tersebut AKAN HILANG.
-# Pastikan Anda sudah mem-backupnya jika diperlukan, atau hanya jalankan skrip ini
-# pada instalasi VPS yang benar-benar baru.
 if [[ -d "/opt/cloud-iprotate/" ]]; then
-    echo "Direktori /opt/cloud-iprotate/ ditemukan, menghapus untuk instalasi bersih..."
     rm -rf /opt/cloud-iprotate/
-else
-    echo "Direktori /opt/cloud-iprotate/ tidak ditemukan, melanjutkan pembuatan..."
 fi
-
 
 # Buat direktori utama untuk aplikasi
 sudo mkdir -p /opt/cloud-iprotate/ || { echo "Gagal membuat direktori /opt/cloud-iprotate/. Keluar."; exit 1; }
 sudo chown -R $(logname):$(logname) /opt/cloud-iprotate/ # Ubah kepemilikan ke user yang menjalankan sudo
 chmod -R 755 /opt/cloud-iprotate/ # Beri izin yang sesuai
 
-echo "Mengunduh aplikasi router Node.js (index.js, configtemplate.json, dan package.json)..."
+echo "Mengunduh aplikasi router Node.js (index.js dan configtemplate.json)..."
+# Mengunduh index.js
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/index.js -o /opt/cloud-iprotate/index.js || { echo "Gagal mengunduh index.js. Keluar."; exit 1; }
+# Mengunduh configtemplate.json (jika Anda ingin mengaturnya dari github juga)
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/configtemplate.json -o /opt/cloud-iprotate/configtemplate.json || { echo "Gagal mengunduh configtemplate.json. Keluar."; exit 1; }
-sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/package.json -o /opt/cloud-iprotate/package.json || { echo "Gagal mengunduh package.json. Keluar."; exit 1; }
 
 
-# --- BARIS-BARIS UNTUK SKRIP PYTHON DAN FILE AWS_ACCOUNTS.JSON ---
+# --- BARIS-BARIS BARU YANG DITAMBAHKAN UNTUK SKRIP PYTHON DAN FILE AWS_ACCOUNTS.JSON ---
 echo "Mengunduh skrip Python (`main.py`, `health_monitor.py`, `redeploy.py`) dan file `aws_accounts.json`..."
+# Catatan: URL ini mengasumsikan Anda sudah mengunggah file-file ini ke repositori Anda
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/main.py -o /opt/cloud-iprotate/main.py || { echo "Gagal mengunduh main.py. Keluar."; exit 1; }
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/health_monitor.py -o /opt/cloud-iprotate/health_monitor.py || { echo "Gagal mengunduh health_monitor.py. Keluar."; exit 1; }
 sudo curl -sSL https://raw.githubusercontent.com/harlock7771/cloud-iprotate/main/redeploy.py -o /opt/cloud-iprotate/redeploy.py || { echo "Gagal mengunduh redeploy.py. Keluar."; exit 1; }
@@ -72,10 +63,10 @@ sudo chmod +x /opt/cloud-iprotate/redeploy.py
 echo "Menginstal dependensi Node.js untuk aplikasi router..."
 # Pastikan npm install dijalankan di direktori yang benar
 (cd /opt/cloud-iprotate/ && npm install) || { echo "Gagal menjalankan npm install. Keluar."; exit 1; }
+npm install pm2 -g # Pastikan pm2 terinstal global
 
 echo "Menyiapkan PM2 untuk aplikasi router (index.js)..."
-# Menggunakan --cwd untuk secara eksplisit menentukan direktori kerja PM2
-pm2 start /opt/cloud-iprotate/index.js --name iprotate --cwd /opt/cloud-iprotate/ || { echo "Gagal memulai aplikasi dengan PM2. Keluar."; exit 1; }
+pm2 start /opt/cloud-iprotate/index.js --name iprotate || { echo "Gagal memulai aplikasi dengan PM2. Keluar."; exit 1; }
 pm2 save || { echo "Gagal menyimpan konfigurasi PM2. Keluar."; exit 1; }
 pm2 startup systemd || { echo "Gagal mengaktifkan PM2 startup. Keluar."; exit 1; }
 
