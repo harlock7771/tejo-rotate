@@ -1,0 +1,33 @@
+[
+    {
+        "id": "primary_aws_01",
+        "accessKey": "AKIAQAY6WGNLAJ22ZMGY",
+        "secretKey": "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",
+        "status": "active",
+        "used_for_instances": []
+    },
+    {
+        "id": "primary_aws_02",
+        "accessKey": "AKIAWJWQMUZLAWIL3PPY",
+        "secretKey": "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",
+        "status": "active",
+        "used_for_instances": []
+    },
+    // ... ulangi untuk primary_aws_03 hingga primary_aws_08 ...
+
+    {
+        "id": "backup_aws_01",
+        "accessKey": "AKIAWKSLO4XRYNEDBTVZ",
+        "secretKey": "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",
+        "status": "available",
+        "used_for_instances": []
+    },
+    {
+        "id": "backup_aws_02",
+        "accessKey": "AKIAXW35EKLD3XZMXG5Q",
+        "secretKey": "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",
+        "status": "available",
+        "used_for_instances": []
+    },
+    // ... ulangi untuk backup_aws_03 hingga backup_aws_16 ...
+]
