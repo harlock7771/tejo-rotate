@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# --- BARU: Pindah ke direktori aman sebelum operasi destruktif ---
+# Ini mencegah error 'getcwd' jika direktori eksekusi skrip dihapus.
+cd /tmp || { echo "Gagal pindah ke /tmp. Keluar."; exit 1; }
+# --- AKHIR BARU ---
+
 # Pastikan skrip dijalankan sebagai root atau dengan sudo
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root or with sudo"
