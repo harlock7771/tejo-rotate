@@ -1,15 +1,15 @@
 [
     {
         "id": "primary_aws_01",
-        "accessKey": "AKIAQAY6WGNLAJ22ZMGY",
-        "secretKey": "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",
+        "accessKey": "",
+        "secretKey": "",
         "status": "active",
         "used_for_instances": []
     },
     {
         "id": "primary_aws_02",
-        "accessKey": "AKIAWJWQMUZLAWIL3PPY",
-        "secretKey": "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",
+        "accessKey": "",
+        "secretKey": "",
         "status": "active",
         "used_for_instances": []
     },
@@ -17,15 +17,15 @@
 
     {
         "id": "backup_aws_01",
-        "accessKey": "AKIAWKSLO4XRYNEDBTVZ",
-        "secretKey": "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",
+        "accessKey": "",
+        "secretKey": "",
         "status": "available",
         "used_for_instances": []
     },
     {
         "id": "backup_aws_02",
-        "accessKey": "AKIAXW35EKLD3XZMXG5Q",
-        "secretKey": "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",
+        "accessKey": "",
+        "secretKey": "",
         "status": "available",
         "used_for_instances": []
     },
